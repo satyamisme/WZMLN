@@ -1,6 +1,7 @@
 from time import time
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time, MirrorStatus
 from bot.helper.ext_utils.fs_utils import get_path_size
+import re
 
 class FFMpegStatus:
     def __init__(self, listener, name, size, gid, status):
@@ -10,11 +11,15 @@ class FFMpegStatus:
         self._gid = gid
         self._status = status
         self._start_time = time()
+        self.duration = 0
+        self.processed_bytes = 0
 
     def progress(self):
         """
         Returns progress percentage
         """
+        if self.duration > 0:
+            return round(self.processed_bytes / self.duration * 100, 2)
         return 0
 
     def speed(self):

@@ -229,6 +229,26 @@ class VidEcxecutor:
             async with task_dict_lock:
                 task_dict[self.listener.mid] = FFMpegStatus(self.listener, self.name, self.size, self.gid, status)
             self.listener.suproc = process
+
+            duration_match = re.search(r"Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}", (await process.stderr.read()).decode())
+            if duration_match:
+                hours = int(duration_match.group(1))
+                minutes = int(duration_match.group(2))
+                seconds = int(duration_match.group(3))
+                task_dict[self.listener.mid].duration = (hours * 3600) + (minutes * 60) + seconds
+
+            while process.returncode is None:
+                line = await process.stderr.readline()
+                if not line:
+                    break
+                line = line.decode().strip()
+                progress_match = re.search(r"time=(\d{2}):(\d{2}):(\d{2})\.\d{2}", line)
+                if progress_match:
+                    hours = int(progress_match.group(1))
+                    minutes = int(progress_match.group(2))
+                    seconds = int(progress_match.group(3))
+                    task_dict[self.listener.mid].processed_bytes = (hours * 3600) + (minutes * 60) + seconds
+
             _, code = await gather(process.wait(), process.stderr.read())
             if code == 0:
                 LOGGER.info(f"FFmpeg succeeded for MID: {self.listener.mid}")
