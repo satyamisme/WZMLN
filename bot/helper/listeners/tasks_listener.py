@@ -74,6 +74,8 @@ from bot.helper.mirror_utils.upload_utils.pyrogramEngine import TgUploader
 from bot.helper.mirror_utils.upload_utils.ddlEngine import DDLUploader
 from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
 from bot.helper.mirror_utils.status_utils.metadata_status import MetadataStatus
+from bot.helper.video_utils.executor import VidEcxecutor
+from bot.helper.video_utils.selector import SelectMode
 from bot.helper.telegram_helper.message_utils import (
     sendCustomMsg,
     sendMessage,
@@ -305,6 +307,12 @@ class MirrorLeechListener:
         if self.join and await aiopath.isdir(dl_path):
             await join_files(dl_path)
 
+        if user_dict.get("vid_tools"):
+            self.vidMode = await SelectMode(self).get_buttons()
+            if not self.vidMode:
+                await self.onUploadError("Action Cancelled by User!")
+                return
+
         if self.extract:
             pswd = self.extract if isinstance(self.extract, str) else ""
             try:
@@ -405,6 +413,11 @@ class MirrorLeechListener:
                 LOGGER.info("Not any valid archive, uploading file as it is.")
                 self.newDir = ""
                 up_path = dl_path
+
+        if self.vidMode:
+            up_path = await VidEcxecutor(self, up_path, gid).execute()
+            if not up_path:
+                return
 
         if metadata := self.user_dict.get("lmeta") or config_dict["METADATA"]:
             meta_path = up_path or dl_path

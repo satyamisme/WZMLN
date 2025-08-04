@@ -750,7 +750,20 @@ config_dict = {
     "USE_SERVICE_ACCOUNTS": USE_SERVICE_ACCOUNTS,
     "WEB_PINCODE": WEB_PINCODE,
     "YT_DLP_OPTIONS": YT_DLP_OPTIONS,
+    "SUPPORTED_LANGUAGES": environ.get("SUPPORTED_LANGUAGES", "en,ar"),
+    "ALWAYS_REMOVE_LANGUAGES": environ.get("ALWAYS_REMOVE_LANGUAGES", "ru,fr"),
 }
+
+VID_MODE = {
+    "merge_hardsubs": "Merge Hardsubs",
+    "merge_rmaudio": "Merge Rem-Audio",
+    "merge_all": "Merge All",
+    "extract_audio": "Extract Audio",
+    "extract_subs": "Extract Subs",
+    "extract_all": "Extract All",
+}
+
+FFMPEG_NAME = "ffmpeg"
 
 if GDRIVE_ID:
     list_drives_dict["Main"] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
