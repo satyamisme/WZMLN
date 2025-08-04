@@ -140,6 +140,7 @@ class MirrorLeechListener:
         self.user_dict = user_data.get(self.user_id, {})
         self.isPM = config_dict["BOT_PM"] or self.user_dict.get("bot_pm")
         self.suproc = None
+        self.retries = 0
         self.sameDir = sameDir
         self.rcFlags = rcFlags
         self.upPath = upPath

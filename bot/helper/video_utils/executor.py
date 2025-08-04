@@ -23,7 +23,7 @@ async def get_metavideo(video_file):
             return []
         metadata = literal_eval(stdout)
         return metadata.get('streams', [])
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         LOGGER.error(f"Error in get_metavideo: {e}")
         return []
 
@@ -62,7 +62,7 @@ class VidEcxecutor:
                     non_queued_up.remove(self.listener.mid)
             await start_from_queued()
             LOGGER.info(f"Cleanup completed for MID: {self.listener.mid}")
-        except Exception as e:
+        except (OSError, Exception) as e:
             LOGGER.error(f"Cleanup error: {e}")
 
     async def _extract_zip(self, zip_path):
@@ -78,7 +78,7 @@ class VidEcxecutor:
             LOGGER.info(f"Extracted ZIP to {extract_dir}")
             self._files.append(extract_dir)
             return extract_dir
-        except Exception as e:
+        except (OSError, Exception) as e:
             LOGGER.error(f"ZIP extraction error: {e}")
             await rmtree(extract_dir, ignore_errors=True)
             return None
@@ -137,9 +137,15 @@ class VidEcxecutor:
 
         try:
             await wait_for(event.wait(), timeout=600)  # Increased timeout to ensure FFmpeg completes
-            if active_ffmpeg != self.listener.mid:
-                LOGGER.warning(f"FFmpeg not active for MID: {self.listener.mid}, retrying queue")
-                return await self.execute()  # Retry if not active
+            async with ffmpeg_queue_lock:
+                if active_ffmpeg != self.listener.mid:
+                    LOGGER.warning(f"FFmpeg not active for MID: {self.listener.mid}, retrying queue")
+                    if self.listener.retries < 3:
+                        self.listener.retries += 1
+                        return await self.execute()
+                    else:
+                        raise Exception("FFmpeg task not activated after 3 retries.")
+
         except AsyncTimeoutError:
             LOGGER.error(f"FFmpeg queue timeout for MID: {self.listener.mid}")
             async with ffmpeg_queue_lock:
@@ -165,7 +171,7 @@ class VidEcxecutor:
                 if active_ffmpeg == self.listener.mid:
                     active_ffmpeg = None
             return result
-        except Exception as e:
+        except (AsyncTimeoutError, Exception) as e:
             LOGGER.error(f"Execution error in {self.mode} for MID: {self.listener.mid}: {e}")
             await self._cleanup()
             await self.listener.onUploadError(f"Failed to process {self.mode}.")
@@ -196,7 +202,7 @@ class VidEcxecutor:
             LOGGER.info(f"Final path set: {self._up_path} for MID: {self.listener.mid}")
             self.listener.name = ospath.basename(self._up_path)
             return self._up_path
-        except Exception as e:
+        except (OSError, Exception) as e:
             LOGGER.error(f"Final path error: {e}")
             await self._cleanup()
             return None
@@ -235,7 +241,7 @@ class VidEcxecutor:
                 LOGGER.error(f"FFmpeg error for MID: {self.listener.mid}: {error_msg}")
                 self.is_cancelled = True
             return False
-        except Exception as e:
+        except (AsyncTimeoutError, Exception) as e:
             LOGGER.error(f"Run cmd error for MID: {self.listener.mid}: {e}")
             self.is_cancelled = True
             return False
@@ -291,7 +297,7 @@ class VidEcxecutor:
                 await sendMessage("Merging failed due to FFmpeg error.", self.listener.message)
                 return None
             return await self._final_path()
-        except Exception as e:
+        except (OSError, Exception) as e:
             LOGGER.error(f"Error in _merge_and_rmaudio for MID: {self.listener.mid}: {e}")
             await sendMessage("Processing failed.", self.listener.message)
             return None
