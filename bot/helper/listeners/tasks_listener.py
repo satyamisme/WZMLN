@@ -635,6 +635,15 @@ class MirrorLeechListener:
             "ELAPSE", Time=get_readable_time(time() - self.message.date.timestamp())
         )
         msg += BotTheme("MODE", Mode=self.upload_details["mode"])
+        if self.vidMode:
+            if kept_streams := self.vidMode.executor.data.get("streams_to_keep"):
+                msg += "<b>Audio Kept:</b>"
+                for stream in kept_streams:
+                    msg += f"\n  - {stream.get('codec_name', 'N/A')}, {stream.get('tags', {}).get('language', 'N/A')}, {stream.get('channel_layout', 'N/A')}"
+            if removed_streams := self.vidMode.executor.data.get("streams_to_remove"):
+                msg += "\n<b>Audio Removed:</b>"
+                for stream in removed_streams:
+                    msg += f"\n  - {stream.get('codec_name', 'N/A')}, {stream.get('tags', {}).get('language', 'N/A')}, {stream.get('channel_layout', 'N/A')}"
         LOGGER.info(f"Task Done: {name}")
 
         buttons = ButtonMaker()

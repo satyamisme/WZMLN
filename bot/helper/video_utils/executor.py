@@ -220,6 +220,8 @@ class VidEcxecutor:
             await self._send_status(status)
             LOGGER.info(f"Running FFmpeg cmd: {' '.join(cmd)}")
             process = await create_subprocess_exec(*cmd, stderr=PIPE)
+            async with task_dict_lock:
+                task_dict[self.listener.mid] = FFMpegStatus(self.listener, self.name, self.size, self.gid, status)
             self.listener.suproc = process
             _, code = await gather(process.wait(), process.stderr.read())
             if code == 0:
@@ -271,12 +273,17 @@ class VidEcxecutor:
 
             audio_streams = [s for s in streams if s['codec_type'] == 'audio']
 
-            for lang in supported_langs:
-                for stream in audio_streams:
-                    if stream.get('tags', {}).get('language') == lang:
-                        maps.append('-map')
-                        maps.append(f"0:{stream['index']}")
-                        break # keep only one audio stream per supported language
+            self.data['streams_to_remove'] = []
+            self.data['streams_to_keep'] = []
+
+            for stream in audio_streams:
+                lang = stream.get('tags', {}).get('language')
+                if lang in removed_langs:
+                    self.data['streams_to_remove'].append(stream)
+                elif lang in supported_langs:
+                    self.data['streams_to_keep'].append(stream)
+                    maps.append('-map')
+                    maps.append(f"0:{stream['index']}")
 
             cmd.extend(maps)
             cmd.extend(['-c', 'copy', self.outfile, '-y'])

@@ -56,5 +56,8 @@ class SelectMode:
         if self.is_cancelled:
             LOGGER.info(f"Cancelled SelectMode for user {self.listener.user_id}")
             return None
+
+        await sendMessage(self.listener.message, f"Processing video with mode: {self.mode}")
+            return None
         LOGGER.info(f"Mode auto-continued: {self.mode}, name: {self.newname}, extra: {self.extra_data}")
         return [self.mode, self.newname, self.extra_data]
