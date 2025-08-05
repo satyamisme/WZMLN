@@ -55,7 +55,7 @@ class FFMpegStatus:
         return self._status
 
     def processed_bytes(self):
-        return 0
+        return self.processed_bytes
 
     def gid(self):
         return self._gid

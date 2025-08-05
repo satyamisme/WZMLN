@@ -308,7 +308,7 @@ class MirrorLeechListener:
         if self.join and await aiopath.isdir(dl_path):
             await join_files(dl_path)
 
-        if user_dict.get("vid_tools"):
+        if user_dict.get("vid_tools") and self.isLeech:
             self.vidMode = await SelectMode(self).get_buttons()
             if not self.vidMode:
                 await self.onUploadError("Action Cancelled by User!")

@@ -45,7 +45,7 @@ class SelectMode:
             except TimeoutError:
                 LOGGER.info(f"Auto-proceeding after timeout for user {self.listener.user_id}")
                 self._event.set()  # Ensure event is set for downstream logic
-        except Exception as e:
+        except (AsyncTimeoutError, Exception) as e:
             LOGGER.error(f"Error in get_buttons: {e}", exc_info=True)
             self.is_cancelled = True
             await editMessage("Failed to process mode selection.", self._reply)
@@ -58,6 +58,5 @@ class SelectMode:
             return None
 
         await sendMessage(self.listener.message, f"Processing video with mode: {self.mode}")
-            return None
         LOGGER.info(f"Mode auto-continued: {self.mode}, name: {self.newname}, extra: {self.extra_data}")
         return [self.mode, self.newname, self.extra_data]

@@ -302,4 +302,9 @@ class WZMLStyle:
 ┠<b> Leech Suffix :</b> <code>{LSUFFIX}</code>
 ┠<b> Leech Dumps :</b> <code>{LDUMP}</code>
 ┠<b> Leech Remname :</b> <code>{LREMNAME}</code>
-┖<B> Leech Metadata :</b> <code>{LMETA}</code>"""
+┖<B> Leech Metadata :</b> <code>{LMETA}</code>""",
+    "STREAM_SELECT_MSG": "<b>MERGE & REMOVE AUDIO ~ @{username}</b>\n<code>{name}</code>\nSize: <b>{size}</b>\n\n<b>Streams:</b>\n{stream_list}\n\n<b>To Remove:</b>\n{remove_list}\n\n<i>Time Left: {time}</i>",
+    "STREAM_SELECT_ALL": "Select All",
+    "STREAM_RESET": "Reset",
+    "STREAM_CONTINUE": "Continue",
+    "STREAM_CANCEL": "Cancel",

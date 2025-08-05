@@ -14,6 +14,7 @@ from bot.helper.ext_utils.media_utils import get_document_type
 from bot.helper.ext_utils.task_manager import ffmpeg_queue, ffmpeg_queue_lock, active_ffmpeg, non_queued_up, queue_dict_lock, start_from_queued
 from bot.helper.mirror_utils.status_utils.ffmpeg_status import FFMpegStatus
 from bot.helper.telegram_helper.message_utils import sendMessage
+from bot.helper.video_utils.extra_selector import ExtraSelect
 
 async def get_metavideo(video_file):
     try:
@@ -288,28 +289,19 @@ class VidEcxecutor:
             else:
                 cmd = [FFMPEG_NAME, '-i', file_list[0]]
 
+            self.streams = streams
+            extra_select = ExtraSelect(self.listener)
+            streams_to_remove = await extra_select.streams_select(streams)
+
+            if extra_select.is_cancelled:
+                await sendMessage(self.listener.message, "Task has been cancelled.")
+                return None
+
             maps = []
-            # video stream
-            maps.append('-map')
-            maps.append('0:v:0')
-
-            # audio streams
-            supported_langs = [lang.strip() for lang in config_dict['SUPPORTED_LANGUAGES'].split(',')]
-            removed_langs = [lang.strip() for lang in config_dict['ALWAYS_REMOVE_LANGUAGES'].split(',')]
-
-            audio_streams = [s for s in streams if s['codec_type'] == 'audio']
-
-            self.data['streams_to_remove'] = []
-            self.data['streams_to_keep'] = []
-
-            for stream in audio_streams:
-                lang = stream.get('tags', {}).get('language')
-                if lang in removed_langs:
-                    self.data['streams_to_remove'].append(stream)
-                elif lang in supported_langs:
-                    self.data['streams_to_keep'].append(stream)
-                    maps.append('-map')
-                    maps.append(f"0:{stream['index']}")
+            for i, stream in enumerate(streams):
+                if i not in streams_to_remove:
+                    maps.append(f"-map")
+                    maps.append(f"0:{i}")
 
             cmd.extend(maps)
             cmd.extend(['-c', 'copy', self.outfile, '-y'])
